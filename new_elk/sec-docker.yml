@@ -1,0 +1,175 @@
+version: '3.6'
+services:
+  es01:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.3.3
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    environment:
+      node.name: es01
+      cluster.name: docker-new-cluster
+      cluster.initial_master_nodes: es01
+      discovery.seed_hosts: es02, es03
+      bootstrap.memory_lock: "true"
+      ES_JAVA_OPTS: "-Xms512m -Xmx512m"
+      xpack.security.enabled: "true"
+      network.publish_host: es01
+      xpack.security.http.ssl.enabled: "true"
+      xpack.security.http.ssl.key: /usr/share/elasticsearch/config/certificates/es01/es01.key
+      xpack.security.http.ssl.certificate_authorities: /usr/share/elasticsearch/config/certificates/ca/ca.crt
+      xpack.security.http.ssl.certificate: /usr/share/elasticsearch/config/certificates/es01/es01.crt
+      xpack.security.transport.ssl.enabled: "true"
+      xpack.security.transport.ssl.verification_mode: certificate
+      xpack.security.transport.ssl.certificate_authorities: /usr/share/elasticsearch/config/certificates/ca/ca.crt
+      xpack.security.transport.ssl.certificate: /usr/share/elasticsearch/config/certificates/es01/es01.crt
+      xpack.security.transport.ssl.key: /usr/share/elasticsearch/config/certificates/es01/es01.key
+      xpack.monitoring.collection.enabled: "true"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    volumes: 
+      - /data_elk/data01:/usr/share/elasticsearch/data:rw
+      - /data_elk/shared/es_certs:/usr/share/elasticsearch/config/certificates:rw
+    networks:
+      - elastic
+    deploy:
+      mode: replicated
+      replicas: 1
+    
+  es02:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.3.3
+    ports:
+      - "9201:9200"
+      - "9301:9300"
+    environment:
+      node.name: es02
+      cluster.name: docker-new-cluster
+      cluster.initial_master_nodes: es01
+      discovery.seed_hosts: es01, es03
+      bootstrap.memory_lock: "true"
+      ES_JAVA_OPTS: "-Xms512m -Xmx512m"
+      xpack.security.enabled: "true"
+      network.publish_host: es02
+      xpack.security.http.ssl.enabled: "true"
+      xpack.security.http.ssl.key: /usr/share/elasticsearch/config/certificates/es02/es02.key
+      xpack.security.http.ssl.certificate_authorities: /usr/share/elasticsearch/config/certificates/ca/ca.crt
+      xpack.security.http.ssl.certificate: /usr/share/elasticsearch/config/certificates/es02/es02.crt
+      xpack.security.transport.ssl.enabled: "true"
+      xpack.security.transport.ssl.verification_mode: certificate
+      xpack.security.transport.ssl.certificate_authorities: /usr/share/elasticsearch/config/certificates/ca/ca.crt
+      xpack.security.transport.ssl.certificate: /usr/share/elasticsearch/config/certificates/es02/es02.crt
+      xpack.security.transport.ssl.key: /usr/share/elasticsearch/config/certificates/es02/es02.key
+      xpack.monitoring.collection.enabled: "true"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    volumes: 
+      - /data_elk/data02:/usr/share/elasticsearch/data:rw
+      - /data_elk/shared/es_certs:/usr/share/elasticsearch/config/certificates:rw
+    networks:
+      - elastic
+    deploy:
+      mode: replicated
+      replicas: 1
+
+  es03:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.3.3
+    ports:
+      - "9202:9200"
+      - "9302:9300"
+    environment:
+      node.name: es03
+      cluster.name: docker-new-cluster
+      cluster.initial_master_nodes: es01
+      discovery.seed_hosts: es01,es02
+      bootstrap.memory_lock: "true"
+      ES_JAVA_OPTS: "-Xms512m -Xmx512m"
+      xpack.security.enabled: "true"
+      network.publish_host: es03
+      xpack.security.http.ssl.enabled: "true"
+      xpack.security.http.ssl.key: /usr/share/elasticsearch/config/certificates/es03/es03.key
+      xpack.security.http.ssl.certificate_authorities: /usr/share/elasticsearch/config/certificates/ca/ca.crt
+      xpack.security.http.ssl.certificate: /usr/share/elasticsearch/config/certificates/es03/es03.crt
+      xpack.security.transport.ssl.enabled: "true"
+      xpack.security.transport.ssl.verification_mode: certificate
+      xpack.security.transport.ssl.certificate_authorities: /usr/share/elasticsearch/config/certificates/ca/ca.crt
+      xpack.security.transport.ssl.certificate: /usr/share/elasticsearch/config/certificates/es03/es03.crt
+      xpack.security.transport.ssl.key: /usr/share/elasticsearch/config/certificates/es03/es03.key
+      xpack.monitoring.collection.enabled: "true"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    volumes: 
+      - /data_elk/data03:/usr/share/elasticsearch/data:rw
+      - /data_elk/shared/es_certs:/usr/share/elasticsearch/config/certificates:rw
+    networks:
+      - elastic
+    deploy:
+      mode: replicated
+      replicas: 1
+
+  kib01:
+    image: docker.elastic.co/kibana/kibana:8.3.3
+    ports:
+      - 5601:5601
+    environment:
+      SERVERNAME: localhost
+      ELASTICSEARCH_URL: https://es01:9200
+      ELASTICSEARCH_HOSTS: https://es01:9200
+      ELASTICSEARCH_USERNAME: kibana_system
+      ELASTICSEARCH_PASSWORD: 'U9Txv6rPOPDgrWgJtvzi'
+      ELASTICSEARCH_SSL_CERTIFICATEAUTHORITIES: /usr/share/elasticsearch/config/certificates/ca/ca.crt
+      SERVER_SSL_ENABLED: "true"
+      SERVER_SSL_KEY: /usr/share/elasticsearch/config/certificates/kib01/kib01.key
+      SERVER_SSL_CERTIFICATE: /usr/share/elasticsearch/config/certificates/kib01/kib01.crt
+      XPACK_ENCRYPTEDSAVEDOBJECTS_ENCRYPTIONKEY: "SzLeB5gT3Rm6z9Ebxcwg8KSBWFzfEcpX"
+      XPACK_SECURITY_ENABLED: "true"
+    volumes:
+      - /data_elk/shared/es_certs:/usr/share/elasticsearch/config/certificates:ro
+    networks:
+      - elastic
+    deploy:
+      mode: replicated
+      replicas: 1
+
+
+  logstash:
+    image: docker.elastic.co/logstash/logstash:8.3.3
+    ports:
+      - "10517:10517" #wazuh-events
+      - "10527:10527" #suricata
+    volumes:
+      - /data_elk/shared/es_certs/ca/:/usr/share/logstash/config/certs/ 
+      - /data_elk/logstash/pipelines.yml:/usr/share/logstash/config/pipelines.yml:ro
+      - /data_elk/logstash/pipelines/:/usr/share/logstash/config/pipelines/:ro
+    environment:
+      LS_JAVA_OPTS: -Xms1g -Xmx1g
+    networks:
+      - elastic
+    deploy:
+      mode: replicated
+      replicas: 1
+
+
+  thehive:
+    image: strangebee/thehive
+    ports:
+      - "9000:9000"
+    volumes:
+      - /data_elk/thehive/db:/data/db
+      - /data_elk/thehive/data:/data/data
+      - /data_elk/thehive/index:/data/index
+    networks:
+      - elastic
+    deploy:
+      mode: replicated
+      replicas: 1
+
+
+        
+networks:
+  elastic:
+    driver: overlay
